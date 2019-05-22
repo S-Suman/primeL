@@ -5,9 +5,56 @@ const jwt = require("jsonwebtoken")
 const bcrypt = require("bcrypt")
 
 const User = require("../models/User")
-users.use(cors())
+const User1 = require("../models/User1")
 
+users.use(cors())
 process.env.SECRET_KEY = 'secret'
+//REGISTER
+users.post('/client_register',(req,res) => {
+    const today = new Date()
+    const userData = {
+        company_name : req.body.company_name,
+        contact_name : req.body.contact_name,
+        contact_Telephone : req.body.contact_Telephone,
+        contact_Mobile : req.body.contact_Mobile,
+        contact_Role : req.body.contact_Role,
+        companyTotalEmployees : req.body.companyTotalEmployees,
+        companyITEmployees : req.body.companyITEmployees,
+        email : req.body.email,
+        password : req.body.password,
+        created : today
+        
+    }
+    
+    User1.findOne({
+        where: {
+            email: req.body.email
+        }
+    })
+        .then(user1 =>{
+            if(!user1){
+                const hash = bcrypt.hashSync(userData.password, 10)
+                userData.password = hash
+                User1.create(userData)
+                .then(user => {
+                    let token = jwt.sign(user.dataValues, process.env.SECRET_KEY, {
+                        expiresIn: 1440
+                    })
+                    res.json({token: token})
+                })
+                .catch(err => {
+                    res.send('error: ' +err)
+                })
+            }else{
+                res.json({ error: 'User already exists' })
+            }
+        })
+          .catch(err => {
+              res.send('error: ' +err)
+          })
+})
+
+
 
 //REGISTER
 users.post('/register',(req,res) => {
